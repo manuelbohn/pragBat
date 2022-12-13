@@ -65,6 +65,7 @@ In the next section, we run the same model for each task and each study. Model o
 #           cores = 4,
 #           iter = 4000)%>%
 #   add_criterion("waic")
+
 # 
 # #saveRDS(bm_cs_s1, "../saves/card_sorting_model_s1.rds")
 # 
@@ -269,7 +270,6 @@ bm_ms_s3 <- readRDS( "../saves/match_to_sample_model_s3.rds")
 
 bm_simpinf_s2 <- readRDS( "../saves/simple_inf_model_s2.rds")
 bm_simpinf_s3 <- readRDS( "../saves/simple_inf_model_s3.rds")
-
 ```
 
 The following code section produces the model predictions included in Figure 2. 
@@ -551,6 +551,18 @@ mcor <- readRDS("../saves/model_based_reliability.rds")%>%
          term = recode(term,
                     `Informativeness Inference (1)` = "Informativeness Inf. (1)",
                     `Informativeness Inference (2)` = "Informativeness Inf. (2)"))
+
+
+
+  ad_model <- brm(correct ~  z_age + (0+test_day|id),
+            data = data%>%filter(study == "study2", task == "ad_hoc_implicature"),
+            family = bernoulli(),
+          #control = list(adapt_delta = 0.99),
+          sample_prior = F,
+          chains = 4,
+          cores = 4,
+          #save_all_pars = TRUE,
+          iter = 4000)
 ```
 
 The next section computes re-test reliability and correlations between tasks based on the aggregated raw scores. The plot generated at the end is Figure 4 from the paper. 
@@ -614,7 +626,7 @@ cor_r1 <- data %>%
   na.omit() %>%
   mutate(study = "study1")%>%
   left_join(mcor)%>%
-  mutate(cor2 = ifelse(!is.na(mcor), paste0(" ",cor,"\n"," [",round(mcor,2), "]"), cor))
+  mutate(cor2 = ifelse(!is.na(mcor), paste0(" ",cor,"\n",round(mcor,1)," (", round(mcor_lci,1),"-",round(mcor_uci,1), ")"), cor))
 
 
 cor_r2 <- data%>%
@@ -642,7 +654,7 @@ cor_r2 <- data%>%
   na.omit() %>%
   mutate(study = "study2")%>%
   left_join(mcor)%>%
-  mutate(cor2 = ifelse(!is.na(mcor), paste0(" ",cor,"\n"," [",round(mcor,2), "]"), cor))
+  mutate(cor2 = ifelse(!is.na(mcor), paste0(" ",cor,"\n",round(mcor,1)," (", round(mcor_lci,1),"-",round(mcor_uci,1), ")"), cor))
 
 cor3 <- data%>%
     mutate(task = recode(task,
@@ -718,8 +730,15 @@ cp3 <- ggplot(cor3, aes(x = term, y = task, fill = cor))+
 
 pf4 <- ggarrange(cp1, cp2, cp3, common.legend = F, nrow = 1, labels = c("A","B","C"), hjust = -1.5)
 
-ggsave(plot = pf4,"../paper/figures/figure4.png", width = 10, height = 3, scale = 1.3, bg = "white")
+pf5 <- ggarrange(cp1, cp2, common.legend = F, ncol = 1, labels = c("A","B"))
+
+ggsave(plot = pf5,"../paper/figures/figure4_1.png", width = 5, height = 10, scale = 1.1, bg = "white")
 ```
+
+```{r}
+ggsave(plot = cp3,"../paper/figures/figure6.png", width = 5, height = 5, scale = 1.1, bg = "white")
+```
+
 
 #Relations between tasks
 
@@ -808,42 +827,74 @@ model3 <- 'ad  =~ ad_hoc_implicature
            simp  =~ simple_inf
            mut  =~ mutual_exclusivity
            card  =~ card_sorting
-           match =~ match_to_sample'
+           match =~ match_to_sample
+
+
+           ad ~~ 0*mut
+           ad ~~ 0*simp
+           simp ~~ 0*mut
+'
 ```
 
-Here we run the three CFA models.
+Here we run the three CFA models. We used slightly informative priors for the manifest and latent variable intercepts because Bayes Factors are conditional on the prior distributions used for the parameters. The results are very similar when default priors are being used. 
 
 ```{r}
-# fit <- bcfa(model, data = cfad, bcontrol = list(cores = 4), target = "stan", n.chains = 4, burnin = 5000, sample = 5000)
-# saveRDS(fit, "../saves/bcfa_prag.rds")
+# Priors
+priors <- dpriors(nu = "normal(0,10)", 
+                alpha = "normal(0,5)")
+
+# run line below to get results with default priors
+#priors <- dpriors()
+```
+
+
+```{r}
+#load RDS objects to reproduce the results from the paper
+fit <- bcfa(model, data = cfad, bcontrol = list(cores = 4), target = "stan", n.chains = 4, burnin = 5000, sample = 5000, dp = priors)
+saveRDS(fit, "../saves/bcfa_prag.rds")
 fit <- readRDS("../saves/bcfa_prag.rds")
 
-# fit2 <- bcfa(model2, data = cfad, bcontrol = list(cores = 4), target = "stan", n.chains = 4, burnin = 5000, sample = 5000)
-# saveRDS(fit2, "../saves/bcfa_single.rds")
+fit2 <- bcfa(model2, data = cfad, bcontrol = list(cores = 4), target = "stan", n.chains = 4, burnin = 5000, sample = 5000, dp = priors)
+saveRDS(fit2, "../saves/bcfa_single.rds")
 fit2 <- readRDS("../saves/bcfa_single.rds")
 
-# fit3 <- bcfa(model3, data = cfad, bcontrol = list(cores = 4), target = "stan", n.chains = 4, burnin = 5000, sample = 5000)
-# saveRDS(fit3, "../saves/bcfa_separate.rds")
+fit3 <- bcfa(model3, data = cfad, bcontrol = list(cores = 4), target = "stan", n.chains = 4, burnin = 5000, sample = 5000, dp = priors)
+saveRDS(fit3, "../saves/bcfa_separate.rds")
 fit3 <- readRDS("../saves/bcfa_separate.rds")
 
+base::summary(fit, ci = T, rsquare = T, standardized = T)
+```
+
+Here we extract the model estimates
+
+```{r}
+model_est <- coef(fit)%>%as_tibble(rownames = "index")%>%
+  left_join(blavInspect(fit, "hpd", level = .95)%>%
+              as_tibble(rownames = "index"))
+
+write_csv(model_est, "../saves/cfa_estimates.csv")
+
+model_est <- read_csv("../saves/cfa_estimates.csv")
 
 ```
+
 
 The following section extracts the fit measures (e.g., PPP) for the three models. 
 
 ```{r}
-bind_rows(
-fitmeasures(fit)%>%as_tibble(rownames = "index")%>%
-  mutate(model = "fit1"),
-fitmeasures(fit2)%>%as_tibble(rownames = "index")%>%
-  mutate(model = "fit2"),
-fitmeasures(fit3)%>%as_tibble(rownames = "index")%>%
-  mutate(model = "fit3")
-)%>%
-  write_csv("../saves/cfa_fit_measures.csv")
+# bind_rows(
+# fitmeasures(fit)%>%as_tibble(rownames = "index")%>%
+#   mutate(model = "fit1"),
+# fitmeasures(fit2)%>%as_tibble(rownames = "index")%>%
+#   mutate(model = "fit2"),
+# fitmeasures(fit3)%>%as_tibble(rownames = "index")%>%
+#   mutate(model = "fit3")
+# )%>%
+#   pivot_wider(names_from = "model", values_from = "value")%>%
+#   write_csv("../saves/cfa_fit_measures.csv")
 ```
 
-Here we extract the WAIC value for each model and compute the WAIC weight. We do the same for LOO. 
+Here we extract the WAIC value for each model and compute the WAIC weight.
 
 ```{r}
 # fit_waic <- fitmeasures(fit)%>%as_tibble(rownames = "index")%>%filter(index == "waic")%>%pull(value)
@@ -872,19 +923,168 @@ Here we extract the WAIC value for each model and compute the WAIC weight. We do
 # l2 <- exp(-0.5*(fit2_looic-fit_looic))/(exp(-0.5*(fit_looic-fit_looic))+exp(-0.5*(fit2_looic-fit_looic))+exp(-0.5*7.1)+exp(-0.5*(fit3_looic-fit_waic)))
 # l3 <- exp(-0.5*(fit3_looic-fit_looic))/(exp(-0.5*(fit_looic-fit_looic))+exp(-0.5*(fit2_looic-fit_looic))+exp(-0.5*7.1)+exp(-0.5*(fit3_looic-fit_waic)))
 # 
-# model_comparison <- tibble(
+# model_indices <- tibble(
 #   model = c("fit1", "fit2", "fit3"),
-#   waic = c(fit_waic, fit2_waic, fit3_waic), 
-#   waic_se = c(fit_se_waic, fit2_se_waic, fit3_se_waic), 
+#   waic = c(fit_waic, fit2_waic, fit3_waic),
+#   waic_se = c(fit_se_waic, fit2_se_waic, fit3_se_waic),
 #   waic_weight = c(w1, w2, w3),
 #   looic = c(fit_looic, fit2_looic, fit3_looic),
 #   looic_se = c(fit_se_looic, fit2_se_looic, fit3_se_looic),
 #   looic_weight = c(l1, l2, l3)
 # )%>%
 #   arrange(waic)%>%
-#   write_csv(., "../saves/bcfa_model_comparison.csv")
+#   write_csv(., "../saves/bcfa_model_indices.csv")
+
+model_indices <- read_csv("../saves/bcfa_model_indices.csv")
+
+```
+
+Here we compare models and extract the WAIC difference and standard error of the difference. We do the same for LOO.
+
+```{r}
+model_comparison <- bind_rows(
+blavCompare(fit, fit2)$diff_waic%>%as_tibble(rownames = "param")%>%mutate(index = "waic", comparison = "prag vs. single"),
+blavCompare(fit, fit2)$diff_loo%>%as_tibble(rownames = "param")%>%mutate(index = "loo", comparison = "prag vs. single"),
+blavCompare(fit, fit2)$bf%>%as_tibble(rownames = "param")%>%mutate(index = "bf", comparison = "prag vs. single"),
+
+blavCompare(fit, fit3)$diff_waic%>%as_tibble(rownames = "param")%>%mutate(index = "waic", comparison = "prag vs. separate"),
+blavCompare(fit, fit3)$diff_loo%>%as_tibble(rownames = "param")%>%mutate(index = "loo", comparison = "prag vs. separate"),
+blavCompare(fit, fit3)$bf%>%as_tibble(rownames = "param")%>%mutate(index = "bf", comparison = "prag vs. separate")
+)
+
+write_csv(model_comparison, "../saves/bcfa_model_comparison.csv")
 
 model_comparison <- read_csv("../saves/bcfa_model_comparison.csv")
+```
+
+
+## Ordinal CFA models
+
+For the CFA models reported above, we generate a continuous response variable for each task by z-transforming the proportion of correct responses for each task. An alternative perspective would be to treat the sum score as an ordinal variable. Below we  
+
+```{r}
+ocfad <- data%>%
+  group_by(id,age, subage,task)%>%
+  filter(task != "training")%>%
+  summarise(mean = sum(correct))%>%
+  pivot_wider(names_from = "task", values_from = "mean")%>%
+  ungroup()%>%
+  filter(!is.na(ad_hoc_implicature),
+         !is.na(card_sorting),
+         !is.na(match_to_sample),
+         !is.na(mutual_exclusivity),
+         !is.na(simple_inf))%>%
+  mutate(ad_hoc_implicature = scale(ad_hoc_implicature),
+         card_sorting = scale(card_sorting),
+         match_to_sample = scale(match_to_sample),
+         mutual_exclusivity = scale(mutual_exclusivity),
+         simple_inf = scale(simple_inf))
+```
+
+We have to collapse several categories due to sparcity.
+
+```{r}
+ocfad <- data%>%
+  group_by(id,age, subage,task)%>%
+  filter(task != "training")%>%
+  summarise(sum = sum(correct))%>%
+  pivot_wider(names_from = "task", values_from = "sum")%>%
+  ungroup()%>%
+  select(-informativeness, -novelty,-preference, -discourse_continuity)%>%
+  na.omit()%>%
+  mutate(ad_hoc_implicature = recode(ad_hoc_implicature,
+                                     `0` = 0,
+                                     `1` = 0,
+                                     `2` = 0,
+                                     `3` = 1,
+                                     `4` = 2,
+                                     `5` = 3
+                                     ),
+         card_sorting = recode(card_sorting,
+                                     `0` = 0,
+                                     `1` = 1,
+                                     `2` = 1,
+                                     `3` = 1,
+                                     `4` = 2,
+                                     `5` = 2,
+                                     `6` = 3
+                                     ),
+        match_to_sample = recode(match_to_sample,
+                                     `0` = 0,
+                                     `1` = 0,
+                                     `2` = 1,
+                                     `3` = 1,
+                                     `4` = 2,
+                                     `5` = 3,
+                                     `6` = 3
+                                     ),
+         mutual_exclusivity = recode(mutual_exclusivity,
+                                     `0` = 0,
+                                     `1` = 0,
+                                     `2` = 0,
+                                     `3` = 1,
+                                     `4` = 2,
+                                     `5` = 3
+                                     ),
+        simple_inf = recode(simple_inf,
+                                     `0` = 0,
+                                     `1` = 0,
+                                     `2` = 1,
+                                     `3` = 1,
+                                     `4` = 2,
+                                     `5` = 3
+        )
+         )
+```
+
+We have to use very restrictive priors in order to get chains to converge
+
+```{r}
+# Priors
+opriors <- dpriors(nu = "normal(0,2)",
+                   alpha = "normal(0,2)",
+                   lambda = "normal(0,2)",
+                   beta = "normal(0,2)",
+                tau = "normal(0, .5)")
+```
+
+```{r}
+ofit <- bcfa(model, data = ocfad, ordered = T, bcontrol = list(cores = 4), target = "stan", n.chains = 4, burnin = 5000, sample = 10000, dp = opriors, mcmcextra = list(data = list(llnsamp = 50)))
+# saveRDS(ofit, "../saves/obcfa_prag.rds")
+# ofit <- readRDS("../saves/obcfa_prag.rds")
+
+ofit2 <- bcfa(model2, data = ocfad, ordered = T, bcontrol = list(cores = 4), target = "stan", n.chains = 4, burnin = 5000, sample = 10000, dp = opriors, mcmcextra = list(data = list(llnsamp = 50)))
+# saveRDS(ofit2, "../saves/obcfa_single.rds")
+# ofit2 <- readRDS("../saves/obcfa_single.rds")
+
+ofit3 <- bcfa(model3, data = ocfad, ordered = T, bcontrol = list(cores = 4), target = "stan", n.chains = 4, burnin = 5000, sample = 10000, dp = opriors, mcmcextra = list(data = list(llnsamp = 50)))
+# saveRDS(ofit3, "../saves/obcfa_separate.rds")
+# ofit3 <- readRDS("../saves/obcfa_separate.rds")
+```
+
+
+Thresholds for the pragmatic model
+
+```{r}
+coef(ofit)%>%as_tibble(rownames = "estimate")%>%
+  filter(grepl("\\|", estimate))%>%
+  separate(estimate, into = c("task", "thresh"), sep = "\\|")%>%
+  ggplot(aes(x = task, y = value, col = thresh))+
+  geom_point()+
+  theme_minimal()
+```
+Compare fitted models
+
+```{r}
+bind_rows(
+fitmeasures(ofit)%>%as_tibble(rownames = "index")%>%
+  mutate(model = "ofit1"),
+fitmeasures(ofit2)%>%as_tibble(rownames = "index")%>%
+  mutate(model = "ofit2"),
+fitmeasures(ofit3)%>%as_tibble(rownames = "index")%>%
+ mutate(model = "ofit3")
+)%>%
+  pivot_wider(names_from = "model", values_from = "value")
 
 ```
 
@@ -1008,6 +1208,6 @@ prsa <- ggarrange(
   labels = c("A", "B")
 )
 
-ggsave(plot = prsa,"../paper/figures/figure6.png", width = 10, height = 4, scale = 1.25, bg = "white")
+ggsave(plot = prsa,"../paper/figures/figure7.png", width = 10, height = 4, scale = 1.25, bg = "white")
 ```
 
