@@ -960,7 +960,7 @@ model_comparison <- read_csv("../saves/bcfa_model_comparison.csv")
 
 ## Ordinal CFA models
 
-For the CFA models reported above, we generate a continuous response variable for each task by z-transforming the proportion of correct responses for each task. An alternative perspective would be to treat the sum score as an ordinal variable. Below we  
+For the CFA models reported above, we generate a continuous response variable for each task by z-transforming the proportion of correct responses for each task. An alternative perspective would be to treat the sum score as an ordinal variable. Below we report that models that treat the raw scores as ordered categories. 
 
 ```{r}
 ocfad <- data%>%
@@ -981,7 +981,7 @@ ocfad <- data%>%
          simple_inf = scale(simple_inf))
 ```
 
-We have to collapse several categories due to sparcity.
+We have to collapse several categories due to sparsity.
 
 ```{r}
 ocfad <- data%>%
