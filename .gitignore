@@ -16,6 +16,12 @@ analysis/reliability_rouder_haaf.Rmd
 analysis/summary.Rmd
 analysis/summary.html
 
+saves/obcfa_prag.rds
+saves/obcfa_separate.rds
+saves/obcfa_single.rds
+
+paper/revision/*
+
 *.docx
 
 cover_letter.pdf

@@ -25,17 +25,17 @@
 \node[roundnode, align = center, above = 2.5cm of X5] (rmts) {Analogical \\ Reasoning};
 
 %Letters
-\node[below=0.5cm of X1] (e1) {0.56};
+\node[below=0.5cm of X1] (e1) {0.55};
 \node[below=0.5cm of X4] (e4) {0.00};
 \node[below=0.5cm of X5] (e5) {0.00};
-\node[below=0.5cm of X2] (e2) {0.65};
-\node[below=0.5cm of X3] (e3) {0.88};
+\node[below=0.5cm of X2] (e2) {0.66};
+\node[below=0.5cm of X3] (e3) {0.87};
 %\node[left=1cm of Xk] (ek) {$e_k$};
 %
 %%Arrows
-\draw[arrow] (prag) -- node[align = center, fill=white, anchor=base] {\textbf{ 0.66} \\ \footnotesize{1.21 (0.38 -- 3.27)}} (X1.north);
-\draw[arrow] (prag) -- node[align = center,fill=white, anchor=base] {\textbf{ 0.59} \\ \footnotesize{1.00 }} (X2.north);
-\draw[arrow] (prag) -- node[align = center,fill=white, anchor=base] {\textbf{ 0.34} \\ \footnotesize{0.58 (0.08 -- 1.46)}} (X3.north);
+\draw[arrow] (prag) -- node[align = center, fill=white, anchor=base] {\textbf{ 0.67} \\ \footnotesize{1.27 (0.39 -- 3.56)}} (X1.north);
+\draw[arrow] (prag) -- node[align = center,fill=white, anchor=base] {\textbf{ 0.58} \\ \footnotesize{1.00 }} (X2.north);
+\draw[arrow] (prag) -- node[align = center,fill=white, anchor=base] {\textbf{ 0.36} \\ \footnotesize{0.63 (0.07 -- 1.68)}} (X3.north);
 
 \draw[arrow] (card) -- node[align = center,fill=white, anchor=base] {1.00 } (X4.north);
 \draw[arrow] (rmts) -- node[align = center,fill=white, anchor=base] {1.00 } (X5.north);
@@ -44,8 +44,8 @@
 % Correlations
 
 \draw [>=Stealth, semithick, <-> ] (prag.north) to ["\textbf{0.33} \\ \footnotesize{0.20 (0.03 -- 0.41)}"align = center, out=140,in=40] (card.north);
-\draw [>=Stealth, semithick, <-> ] (rmts.north) to ["0.06 \\ \footnotesize{0.04 (-0.11 -- 0.18)}" align = center, out=140,in=40] (prag.north);
-\draw [>=Stealth, semithick, <-> ] (rmts.north) to ["-0.04 \\ \footnotesize{-0.04 (-0.22 -- 0.15)}" align = center, out=140,in=40] (card.north);
+\draw [>=Stealth, semithick, <-> ] (rmts.north) to ["0.07 \\ \footnotesize{0.04 (-0.11 -- 0.18)}" align = center, out=140,in=40] (prag.north);
+\draw [>=Stealth, semithick, <-> ] (rmts.north) to ["-0.03 \\ \footnotesize{-0.04 (-0.22 -- 0.15)}" align = center, out=140,in=40] (card.north);
 
 
 
