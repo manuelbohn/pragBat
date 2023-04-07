@@ -21,6 +21,7 @@ saves/obcfa_separate.rds
 saves/obcfa_single.rds
 
 paper/revision/*
+paper/2nd_revision/*
 
 *.docx
 
