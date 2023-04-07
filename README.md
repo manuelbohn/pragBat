@@ -1,4 +1,4 @@
-# An individual differences perspective on the development of pragmatic abilities in the preschool years
+# An individual differences perspective on pragmatic abilities in the preschool years
 
 ------------------------------------------------------------------------
 
@@ -8,7 +8,7 @@
 
 ## Paper
 
-Bohn, M.,Tessler, M. H., Kordt, C., Hausmann, T., & Frank, M. C. (2022). [An individual differences perspective on the development of pragmatic abilities in the preschool years](https://psyarxiv.com/s2e3p/). *PsyArXiv*
+Bohn, M.,Tessler, M. H., Kordt, C., Hausmann, T., & Frank, M. C. (*in press*). [An individual differences perspective on the development of pragmatic abilities in the preschool years](https://psyarxiv.com/s2e3p/). *Developmental Science*
 
 ## Structure
 
